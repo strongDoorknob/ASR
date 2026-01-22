@@ -1,0 +1,693 @@
+{
+  "meta": {
+    "instanceId": "your-instance-id"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "triggerOnFileCreated",
+        "folderId": "your-audio-folder-id",
+        "additionalFields": {
+          "mimeTypes": ["audio/mp4", "audio/mpeg"]
+        }
+      },
+      "id": "1",
+      "name": "Google Drive Trigger",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "fileId": "{{ $json[\"id\"] }}",
+        "additionalFields": {}
+      },
+      "id": "2",
+      "name": "Download Audio",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 2,
+      "position": [400, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "filePath": "/tmp/{{ $json[\"name\"] }}",
+        "dataPropertyName": "data"
+      },
+      "id": "3",
+      "name": "Write Audio to Disk",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "command": "ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 /tmp/{{ $json[\"name\"] }}"
+      },
+      "id": "4",
+      "name": "Get Duration",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "{{ parseFloat($json[\"output\"]) }}",
+              "operation": "larger",
+              "value2": 1800
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "IF Long Audio",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "command": "ffmpeg -i /tmp/{{ $json[\"name\"] }} -f segment -segment_time 60 -c copy /tmp/chunk_%03d.m4a"
+      },
+      "id": "6",
+      "name": "Split Audio",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1200, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "const numChunks = Math.ceil(parseFloat($input.first().json.duration) / 60);\nconst chunks = [];\nfor (let i = 0; i < numChunks; i++) {\n  chunks.push({ json: { chunk: `/tmp/chunk_${i.toString().padStart(3, '0')}.m4a` } });\n}\nreturn chunks;"
+      },
+      "id": "7",
+      "name": "List Chunks",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1400, 200]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "batchInterval": 0
+      },
+      "id": "8",
+      "name": "Loop Over Chunks",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [1600, 300]
+    },
+    {
+      "parameters": {
+        "filePath": "{{ $json[\"chunk\"] }}"
+      },
+      "id": "9",
+      "name": "Read Chunk",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [1800, 300]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+        "options": {
+          "retryOnFail": true,
+          "retries": 3,
+          "retryBackoffType": "exponential"
+        },
+        "headers": {
+          "uiNodes": {}
+        },
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "value",
+              "name": "key",
+              "value": "{{ $credentials.geminiApiKey }}"
+            },
+            {
+              "parameterType": "value",
+              "name": "contents",
+              "value": "[{\"parts\": [{\"text\": \"Transcribe the following audio accurately. Assume the audio is in Thai. Include speaker labels...\"}, {\"inline_data\": {\"mime_type\": \"audio/mp4\", \"data\": \"{{ base64($binary.data) }}\"}}]}]"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {}
+      },
+      "id": "10",
+      "name": "Transcribe Chunk",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "2",
+          "name": "Gemini API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "wait",
+        "aggregate": "concatenateValues",
+        "aggregate_propertyName": "transcription",
+        "aggregate_separator": "\\n\\n"
+      },
+      "id": "11",
+      "name": "Aggregate Transcriptions",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1.1,
+      "position": [2200, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "{{ $json[\"transcription\"] }}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "12",
+      "name": "IF Transcription Empty",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2400, 300]
+    },
+    {
+      "parameters": {
+        "channel": "your-slack-channel",
+        "text": "Error: Transcription failed for {{ $json[\"name\"] }}",
+        "additionalFields": {}
+      },
+      "id": "13",
+      "name": "Notify Error",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [2600, 200],
+      "credentials": {
+        "slackApi": {
+          "id": "3",
+          "name": "Slack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "list",
+        "folderId": "your-summaries-folder-id",
+        "additionalFields": {
+          "orderBy": "modifiedTime desc",
+          "mimeType": "text/plain"
+        }
+      },
+      "id": "14",
+      "name": "List Previous Summaries",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 2,
+      "position": [2600, 400],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "batchInterval": 0
+      },
+      "id": "15",
+      "name": "Loop Over Summaries",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [2800, 400]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "fileId": "{{ $json[\"id\"] }}",
+        "additionalFields": {}
+      },
+      "id": "16",
+      "name": "Download Summary",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 2,
+      "position": [3000, 400],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "wait",
+        "aggregate": "concatenateValues",
+        "aggregate_propertyName": "previous_summaries",
+        "aggregate_separator": "\\n\\n"
+      },
+      "id": "17",
+      "name": "Aggregate Summaries",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1.1,
+      "position": [3200, 400]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+        "options": {
+          "retryOnFail": true,
+          "retries": 3,
+          "retryBackoffType": "exponential"
+        },
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "value",
+              "name": "key",
+              "value": "{{ $credentials.geminiApiKey }}"
+            },
+            {
+              "parameterType": "value",
+              "name": "contents",
+              "value": "[{\"parts\": [{\"text\": \"You are an expert summarizer... Now, apply the same structure...\\n{{ $json.transcription }}\\nPrevious: {{ $json.previous_summaries }}\"}}]}]"
+            }
+          ]
+        },
+        "sendQuery": true
+      },
+      "id": "18",
+      "name": "Summarize",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3400, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "2",
+          "name": "Gemini API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "folderId": "your-summaries-folder-id",
+        "fileName": "summary_{{ new Date().toISOString().replace(/:/g, '-') }}.txt",
+        "binaryPropertyName": "data",
+        "additionalFields": {}
+      },
+      "id": "19",
+      "name": "Upload Summary TXT",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 2,
+      "position": [3600, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "operation": "create",
+        "title": "Meeting Summary - {{ new Date().toISOString() }}",
+        "content": "<h1>Meeting Summary</h1><p>{{ $json.summary.replace(/\\n/g, '<br>') }}</p>",
+        "additionalFields": {}
+      },
+      "id": "20",
+      "name": "Create Google Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 1,
+      "position": [3800, 300],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "4",
+          "name": "Google Docs"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "fileId": "{{ $json[\"documentId\"] }}",
+        "additionalFields": {
+          "mimeType": "application/pdf"
+        }
+      },
+      "id": "21",
+      "name": "Export as PDF",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 2,
+      "position": [4000, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "folderId": "your-pdf-folder-id",
+        "fileName": "summary.pdf",
+        "binaryPropertyName": "data",
+        "additionalFields": {}
+      },
+      "id": "22",
+      "name": "Upload PDF",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 2,
+      "position": [4200, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "1",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "your-slack-channel",
+        "text": "Success: Summary PDF uploaded to {{ $json[\"webViewLink\"] }}",
+        "additionalFields": {}
+      },
+      "id": "23",
+      "name": "Notify Success",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [4400, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "3",
+          "name": "Slack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "rm /tmp/*"
+      },
+      "id": "24",
+      "name": "Cleanup",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [4600, 300]
+    }
+  ],
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Audio": {
+      "main": [
+        [
+          {
+            "node": "Write Audio to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Audio to Disk": {
+      "main": [
+        [
+          {
+            "node": "Get Duration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Duration": {
+      "main": [
+        [
+          {
+            "node": "IF Long Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Long Audio": {
+      "main": [
+        [
+          {
+            "node": "Split Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Audio": {
+      "main": [
+        [
+          {
+            "node": "List Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Chunks": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Chunks": {
+      "main": [
+        [
+          {
+            "node": "Read Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Chunk": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Chunk": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Transcriptions": {
+      "main": [
+        [
+          {
+            "node": "IF Transcription Empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Transcription Empty": {
+      "main": [
+        [
+          {
+            "node": "Notify Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "List Previous Summaries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Previous Summaries": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Summaries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Summaries": {
+      "main": [
+        [
+          {
+            "node": "Download Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Summary": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Summaries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Summaries": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "Upload Summary TXT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Summary TXT": {
+      "main": [
+        [
+          {
+            "node": "Create Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Export as PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Export as PDF": {
+      "main": [
+        [
+          {
+            "node": "Upload PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload PDF": {
+      "main": [
+        [
+          {
+            "node": "Notify Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Success": {
+      "main": [
+        [
+          {
+            "node": "Cleanup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1",
+  "id": "workflow-id",
+  "name": "Complex Audio Transcription and Summary Workflow",
+  "tags": []
+}

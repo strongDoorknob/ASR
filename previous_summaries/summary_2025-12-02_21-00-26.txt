@@ -1,0 +1,40 @@
+Of course. As an expert summarizer, I will analyze the provided transcript and structure the key information.
+
+Here is a concise, actionable summary of the meeting:
+
+### **Meeting Summary: Internship Final Presentation & Report Guidelines**
+
+**1. Key Topics Discussed:**
+
+*   **Final Presentation Logistics:** Clarification on presentation length, language, and core content requirements.
+*   **Final Report Requirements:** Discussion on the necessity of an appendix and the proper way to structure reports for students who worked on the same project.
+*   **Submission Deadlines & Procedures:** Addressing student concerns about deadlines for reports versus signed evaluation forms.
+*   **Evaluation Process:** Detailed breakdown of which forms need to be completed by company supervisors versus faculty advisors.
+*   **Confidentiality:** Acknowledgment that presentation slides may contain confidential company information and are not required for submission.
+*   **Administrative Follow-up:** A specific request for contact information from one student for a formal thank you letter from the faculty.
+
+**2. Decisions Made:**
+
+*   **Presentation Time:** The presentation length has been set to **10-15 minutes** per person, ideally structured as approximately 12-13 minutes for the presentation and 2-3 minutes for Q&A.
+*   **Presentation Language:** All presentations must be conducted in **English**.
+*   **Presentation Slides:** Students are **not required to submit their presentation slides**, as they may contain confidential information. The professor only needs to see the live presentation.
+*   **Report Appendix:** It is strongly recommended that students **include an appendix** in their reports. Its absence might lead to a zero score for that specific rubric item.
+*   **Reports for Team Projects:** Students who worked on the same project must write **separate reports**. While the introduction describing the overall project can be similar, the main body of the report must detail each student's **specific, individual contributions and responsibilities**.
+*   **Deadline for Evaluation Forms:** The deadline for submitting signed evaluation forms is flexible. Students must bring the physical, signed copies from both their company supervisor and faculty advisor to the meeting on **the 11th**.
+
+**3. Action Items:**
+
+*   **All Students:** Prepare a 10-15 minute presentation in English focusing on their specific project contributions and, most importantly, demonstrating the project's relevance to Electrical Engineering.
+*   **All Students:** Ensure final reports are written individually and include an appendix before submission.
+*   **All Students:** Submit final reports via the Google Form as instructed.
+*   **All Students:** Collect all required, signed evaluation forms (from company and faculty advisors) and bring them to the in-person meeting on **the 11th**.
+*   **Sujinsuda (Speaker 4):** Follow up with her company supervisor to get the correct contact person for the faculty's thank you letter and forward the information to the professor.
+
+**4. Open Questions:**
+
+*   No open questions were recorded from the main meeting; all procedural queries regarding the presentation, report, and evaluation process were addressed and resolved.
+
+**5. Overall Tone and Highlights:**
+
+*   **Tone:** The meeting was administrative, direct, and clarifying. The professor was accommodating and flexible regarding deadlines and presentation timing, while students were proactive in seeking clear instructions to meet expectations.
+*   **Highlights:** A key highlight was the professor's explicit instruction that the main goal of the presentation is to **convince him that the internship work was substantive and directly related to Electrical Engineering**. The detailed clarification on how to structure reports for team projects to reflect individual effort was another crucial point. The overall discussion provided students with a clear and actionable roadmap for successfully completing their internship requirements.
