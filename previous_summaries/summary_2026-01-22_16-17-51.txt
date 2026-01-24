@@ -1,0 +1,43 @@
+Here is a concise, actionable summary of the meeting:
+
+### **Meeting Summary: Solar Drone Project - Business Model & Strategic Next Steps**
+
+**1. Key Topics Discussed:**
+
+*   **Solar Drone Project Validation:** Discussion centered on the drone-based solar O&M project, including the need to validate a hypothesis of significant energy recovery improvement (e.g., 15% increase) post-implementation.
+*   **Financial Model & Payback Period:** In-depth review of the project's financial viability, specifically questioning and requesting details on the claimed 3-month (or 18-month) payback period.
+*   **Target Market & Client Engagement (BCG/PTT Focus):** Extensive deliberation on targeting BCG (PTT Group) as a primary client for solar farm and rooftop O&M services. Discussions included BCG's current O&M practices (manual vs. drone, internal vs. external), their plans for solar expansion (400 pumps, "Solar for the People" projects), and the potential for the drone service to "surprise" BCG with its capabilities.
+*   **Scalability and Expansion Plans:** Strategies for scaling up solar O&M services, particularly for solar rooftops and larger solar farms, in collaboration with BCG and the Department of Energy.
+*   **Internal Program & Career Pathing:** Dialogue regarding potential pathways for Speaker 3's project within the organization, such as "Long Dip" (a deeper dive/long-term program) or "Startup Pitching," considering Speaker 3's completed internship.
+*   **Innovation KPI Requirement:** A reminder that an Innovation KPI is mandatory for Speaker 1 ("P'Oh").
+*   **Speaker 1's Future Deployment:** Mention of Speaker 1's upcoming 2-3 month trip to Japan to oversee internships.
+
+**2. Decisions Made:**
+
+*   **Financial Model Clarification:** Speaker 3 is required to provide a detailed financial model explaining the claimed 3-month (or 18-month) payback period for the drone O&M service.
+*   **Internal Project Categorization:** The team (Speaker 1 & 2) will discuss internally to determine whether Speaker 3's project is best suited for the "Long Dip" program or the "Startup Pitching" channel.
+*   **Innovation KPI for Speaker 1:** It was confirmed that Speaker 1 (P'Oh) must prepare an Innovation KPI.
+*   **Strategic Client Approach:** The team will continue to explore and propose the drone O&M service to BCG, despite potential existing manual O&M processes, highlighting its differentiation.
+
+**3. Action Items:**
+
+*   **Speaker 3:**
+    *   **Develop Financial Model:** Submit a detailed financial model, specifically outlining the calculation and assumptions for the 3-month payback period, to Speaker 2 (and Speaker 1).
+    *   **Prepare Project Plan:** Create a comprehensive plan for the solar drone project, including its technical aspects and how it aligns with the business model.
+    *   **Inquire with BCG:** Gather more information on BCG's current O&M practices for solar (internal vs. external, manual vs. drone usage) and their openness to new service providers.
+*   **Team (Speaker 1 & 2):**
+    *   **Internal Discussion on Project Channel:** Decide whether Speaker 3's project fits into the "Long Dip" program or the "Startup Pitching" stream.
+*   **Speaker 1 (P'Oh):**
+    *   **Prepare Innovation KPI:** Develop and prepare the required Innovation KPI.
+
+**4. Open Questions:**
+
+*   The precise methodology and underlying data supporting the 3-month payback period for the solar drone O&M service.
+*   Specific details of BCG's current O&M contracts and practices for their solar projects (e.g., are they open to third-party services, do they already use drones/thermal imaging, and how is their O&M structured for pumps and larger farms?).
+*   How to effectively differentiate the proposed drone O&M service from existing or potential in-house drone capabilities within PTT/BCG, particularly regarding thermal imaging and data processing.
+*   The timeline for BCG's new solar rooftop promotions and initiatives that could impact service adoption.
+
+**5. Overall Tone and Highlights:**
+
+*   **Tone:** The meeting was highly interactive, questioning, and strategically focused. It combined a rigorous challenge to the project's financial assumptions with a collaborative spirit to explore its market potential. The mentor-like guidance from Speakers 1 and 2 pushed for practical planning and strategic alignment with major clients.
+*   **Highlights:** A key highlight was the **intensive scrutiny of the project's financial model**, particularly the bold claim of a 3-month payback period, emphasizing the need for robust validation. The strategic focus on **BCG/PTT as a critical target client** and the deep dive into their existing and future solar initiatives underscored the practical business application. The discussion also highlighted the importance of **differentiating the service** from potential in-house solutions and aligning the project with internal career development programs.

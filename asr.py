@@ -238,5 +238,5 @@ def main(audio_file):
     save_summary(summary)
 
 if __name__ == "__main__":
-    audio_file = 'voices/combined_audio.m4a'
+    audio_file = 'voices/M Tower.m4a'
     main(audio_file)
