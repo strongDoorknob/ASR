@@ -141,30 +141,56 @@ def summarize_transcription(transcription, previous_summaries):
 
     model_name = 'gemini-2.5-flash'
 
-    few_shot_prompt = """
-        You are an expert summarizer for weekly meetings. Your goal is to create concise, actionable summaries.
-        Follow this structure:
-        1. Key Topics Discussed: Bullet points of main subjects.
-        2. Decisions Made: List any agreements or resolutions.
-        3. Action Items: Who does what by when.
-        4. Open Questions: Any unresolved issues.
-        5. Overall Tone and Highlights: Brief overview.
+    # REPLACED: New complex prompt structure
+    system_instruction = """
+    You are an expert Chief of Staff and professional meeting minute taker. 
+    Your goal is to produce a comprehensive, high-detail meeting report that captures not just what was said, but the nuance, context, and specific data points.
+    
+    The input text is a transcription of a meeting (likely in Thai). 
+    Please analyze it deeply and generate a report in Thai (unless the transcription is 100% English) using the following strict structure:
 
-        Use chain-of-thought reasoning: First, identify the main themes. Then, extract key points.
-        Finally, condense into the structure.
+    # 1. Executive Summary (บทสรุปผู้บริหาร)
+    * **Objective:** A 2-3 sentence overview of why the meeting took place.
+    * **Key Outcomes:** The top 3 most critical results or strategic shifts from this meeting.
+
+    # 2. Detailed Discussion Log (บันทึกการหารือแบบละเอียด)
+    *Analyze the transcript and group the conversation into distinct Topics. For EACH topic, provide:*
+    * **Topic:** [Topic Name]
+    * **Context:** Briefly explain the background or the problem being discussed.
+    * **Key Discussion Points:** Detail the arguments raised. Who supported what? What were the concerns? (e.g., "Speaker A proposed X, but Speaker B argued it was too expensive").
+    * **Specific Data:** EXTRACT all specific numbers, prices, dates, or KPIs mentioned.
+    * **Conclusion:** How did this specific topic end? (Agreed, Deferred, or Disagreement).
+
+    # 3. Decisions & Rationale (มติที่ประชุมและเหตุผล)
+    * **Decision:** [What was decided]
+    * **Rationale:** [Why was this decided? What data or argument supported this choice?]
+
+    # 4. Action Items (งานที่ต้องดำเนินการต่อ)
+    * [ ] **[Responsible Person]**: [Specific Task] (Deadline: [Date if mentioned]) - *Priority: [High/Medium/Low]*
+
+    # 5. Parking Lot & Unresolved Issues (ประเด็นคงค้าง)
+    * List items that were raised but not resolved or deferred to a future meeting.
+
+    **CRITICAL INSTRUCTION:** - Do not be vague. Do not write "They discussed the budget." 
+    - Instead write: "They discussed the Q3 marketing budget variance of 50,000 THB."
+    - If speakers are identified in the transcript, attribute key quotes to them.
     """
 
-    if previous_summaries:
-        few_shot_prompt += '\nHere are examples from previous weeks for consistency:\n'
-        for i, summary in enumerate(previous_summaries, 1):
-            few_shot_prompt += f'Week {i} summary example: \n{summary}\n\n'
+    # We add the transcription to the user message
+    user_content = "Here is the meeting transcription:\n\n" + transcription
 
-    few_shot_prompt += 'Now, apply the same structure and style to summarize the following transcription:\n' + transcription
+    # Optional: logic to include previous summaries if you want continuity
+    if previous_summaries:
+        user_content = f"Note: This is a recurring meeting. Here are summaries from the last {len(previous_summaries)} meetings for context on ongoing issues:\n\n" + "\n".join(previous_summaries[-3:]) + "\n\n" + user_content
 
     try:
         response = client.models.generate_content(
             model=model_name,
-            contents=few_shot_prompt
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction, # Using system instruction for the "Role"
+                temperature=0.3 # Lower temperature for more factual/precise results
+            ),
+            contents=user_content
         )
         
         if response.text:
@@ -195,18 +221,55 @@ def save_summary(summary):
 def generate_pdf(content, output_file, title):
     doc = SimpleDocTemplate(output_file, pagesize=letter)
     styles = getSampleStyleSheet()
+    
+    # Register font (Keep your existing font registration)
     styles['Normal'].fontName = 'THSarabun'
     styles['Normal'].fontSize = 14
+    styles['Normal'].leading = 18 # Add line spacing for readability
+    
     styles['Title'].fontName = 'THSarabun'
-    styles['Title'].fontSize = 18
+    styles['Title'].fontSize = 20
+    styles['Title'].alignment = 1 # Center align title
+
+    # Create a custom style for headers (lines starting with #)
+    from reportlab.lib.enums import TA_LEFT
+    header_style = styles['Heading2']
+    header_style.fontName = 'THSarabun'
+    header_style.fontSize = 16
+    header_style.textColor = 'black'
+
     flowables = []
-
     flowables.append(Paragraph(title, styles['Title']))
-    flowables.append(Spacer(1, 12))
+    flowables.append(Spacer(1, 20))
 
-    for paragraph in content.split('\n\n'):
-        flowables.append(Paragraph(paragraph.replace('\n', '<br/>'), styles['Normal']))
-        flowables.append(Spacer(1, 12))
+    # Split by lines to process formatting manually
+    lines = content.split('\n')
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            flowables.append(Spacer(1, 6))
+            continue
+
+        # Handle Markdown-style Headers (#)
+        if line.startswith('#'):
+            clean_line = line.replace('#', '').strip()
+            flowables.append(Spacer(1, 10))
+            flowables.append(Paragraph(clean_line, header_style))
+            flowables.append(Spacer(1, 5))
+        
+        # Handle simple bolding **text** -> <b>text</b> for ReportLab
+        else:
+            # ReportLab uses HTML-like tags for bolding. 
+            # We replace ** with <b> and </b> alternately.
+            # A simple regex or replace loop is needed for perfect markdown, 
+            # but a quick fix is just replacing the ** with empty string if you don't want to parse logic,
+            # OR simple manual replace:
+            formatted_line = line.replace('**', '<b>', 1).replace('**', '</b>', 1) 
+            # (Note: The line above only fixes one bold pair per line. For robust markdown parsing, you'd need a markdown library, 
+            # but usually just rendering the text is fine).
+            
+            flowables.append(Paragraph(formatted_line, styles['Normal']))
 
     doc.build(flowables)
     print(f"PDF generated: {output_file}")
@@ -234,9 +297,9 @@ def main(audio_file):
         return
 
     print("Summary completed. Generating PDF...")
-    generate_pdf(summary, 'summary.pdf', 'Meeting Summary')
+    generate_pdf(summary, 'SomYing_Summary.pdf', 'Lecture Summary')
     save_summary(summary)
 
 if __name__ == "__main__":
-    audio_file = 'voices/M Tower.m4a'
+    audio_file = 'voices/มหาวิทยาลัยเกษตรศาสตร์.m4a'
     main(audio_file)
